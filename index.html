@@ -115,7 +115,7 @@ let meta={g:0,xp:[0,0,0,0,0],own:[0],eq:[0,0,0,0,0]};try{const m=JSON.parse(loca
 meta.eq=(meta.eq||[]).concat([0,0,0,0,0,0,0,0,0,0]).slice(0,10);meta.xp=(meta.xp||[]).concat([0,0,0,0,0,0,0,0,0,0]).slice(0,10);
 SK.forEach((k,i)=>{if(k.no){meta.own=meta.own.filter(o=>o!==i);meta.eq=meta.eq.map(e=>e===i?0:e)}});
 const XT=[0,800,2200,4500,8000];function lvOf(x){return XT.filter(t=>x>=t).length-1}
-const SF_CLOUD={url:'',key:''};
+const SF_CLOUD={url:'https://okkuhpqlsdkonsvkxdut.supabase.co',key:'sb_publishable_NU9dqLMI_Q4GNLopKq8Syw_eCROnL9Y'};
 let cs=null,cT=0;try{cs=JSON.parse(localStorage.getItem('sf1s'))}catch(e){}
 function save(k){if(!k)meta.ts=Date.now();try{localStorage.setItem('sf1',JSON.stringify(meta))}catch(e){}if(!k&&cs&&SF_CLOUD.url){clearTimeout(cT);cT=setTimeout(()=>{cPush().catch(()=>{})},2500)}}
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
