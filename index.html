@@ -132,7 +132,7 @@ async function cReq(path,o,auth){o=o||{};const h={apikey:SF_CLOUD.key,'Content-T
  try{const r=await fetch(SF_CLOUD.url.replace(/\/$/,'')+path,{method:o.method||'GET',headers:Object.assign(h,o.headers||{}),body:o.body?JSON.stringify(o.body):undefined});let j=null;try{j=await r.json()}catch(e){}return{ok:r.ok,status:r.status,j}}catch(e){return{ok:false,status:0,j:null}}}
 function cErr(r){const j=r.j||{},t=String(j.error_code||j.code||'')+' '+String(j.msg||j.message||j.error_description||j.error||'');
  if(r.status===0)return'Keine Verbindung zum Konto-Dienst';if(/already|exists|registered/i.test(t))return'Dieser Benutzername ist schon vergeben';if(/invalid_credentials|invalid login/i.test(t))return'Benutzername oder Passwort falsch';
- if(/weak_password|at least|should be/i.test(t))return'Das Passwort ist zu schwach (mindestens 6 Zeichen)';if(/rate|too many|over_/i.test(t))return'Zu viele Versuche, bitte kurz warten';return'Fehler beim Konto-Dienst ('+(r.status||'?')+')'}
+ if(/weak_password|at least|should be/i.test(t))return'Das Passwort ist zu schwach (mindestens 6 Zeichen)';if(/rate|too many|over_/i.test(t))return'Zu viele Versuche, bitte kurz warten';return'Fehler beim Konto-Dienst ('+(r.status||'?')+')'+(t.trim()?': '+t.trim().slice(0,140):'')}
 async function cAuth(n,pw,reg){const r=await cReq(reg?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:{email:cEmail(n),password:pw}});if(!r.ok)return{err:cErr(r)};const j=r.j||{};
  if(!j.access_token)return{err:reg?'Konto angelegt, aber der Dienst verlangt noch eine E-Mail-Bestätigung. Diese Einstellung muss im Dienst ausgeschaltet werden.':'Anmeldung fehlgeschlagen'};
  cs={at:j.access_token,rt:j.refresh_token,uid:(j.user&&j.user.id)||'',name:n};csSave();return{ok:1}}
