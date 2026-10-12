@@ -658,9 +658,10 @@ function mpRecv(m){if(!m||m.s===MP.me)return;if(m.s===MP.hostId)MP.hs=0;
  else if(m.t==='fin'){if(MP.on&&!MP.fin&&!MP.host&&m.m){money[0]=m.m[MP.myT];money[1]=m.m[1-MP.myT];MP.fin=mpRes(money[0]>=money[1]?0:1)}}}
 function mpStart(){MP.started=true;MP.on=true;MP.fin=null;MP.q={ac:[],dd:[]};MP.hs=0;MP.ft=0;mode='mp';init();if(MP.onStart)MP.onStart()}
 function mpLeave(){if(MP.ch){mpSend({t:'bye'});try{MP.ch.close()}catch(e){}}MP.ch=null;MP.cb=null;MP.onStart=null;if(MP.on||MP.started){MP.on=false;MP.started=false;mode=MODES[mi][0]}MP.on=false;MP.started=false;MP.host=false;MP.pl=[]}
-function mpUnits(){const P=MP.pl,nb=MP.cfg.tm==='coop'?(MP.cfg.bots|0):0,N=P.length+nb,mp=P.find(p=>p.id===MP.me)||P[0];MP.myT=mp.tm;MP.map={};U=[];
+function mpUnits(){const P=MP.pl,nb=MP.cfg.bots|0,N=P.length+nb,mp=P.find(p=>p.id===MP.me)||P[0];MP.myT=mp.tm;MP.map={};U=[];
  [mp,...P.filter(p=>p!==mp)].forEach(p=>{const u=mk(mpLt(p.tm),p===mp);u.pid=p.id;u.own=p.id;u.rem=p!==mp;u.hum=true;u.nm=p.nm;u.sa0=P.indexOf(p)/N*Math.PI*2;ringPos(u);if(u.rem)u.hp=0;U.push(u);MP.map[u.pid]=u});
- for(let i=0;i<nb;i++){const u=mk(mpLt(1),false,i%3===2);u.pid='b'+i;u.own=MP.hostId||MP.me;u.rem=!MP.host;u.sa0=(P.length+i)/N*Math.PI*2;ringPos(u);if(u.rem)u.hp=0;U.push(u);MP.map[u.pid]=u}}
+ const cnt=[0,0];P.forEach(p=>cnt[p.tm]++);const bt=[];for(let i=0;i<nb;i++){let t=1;if(MP.cfg.tm!=='coop'){t=cnt[0]<=cnt[1]?0:1;cnt[t]++}bt.push(t)}
+ for(let i=0;i<nb;i++){const u=mk(mpLt(bt[i]),false,i%3===2);u.pid='b'+i;u.own=MP.hostId||MP.me;u.rem=!MP.host;u.sa0=(P.length+i)/N*Math.PI*2;ringPos(u);if(u.rem)u.hp=0;U.push(u);MP.map[u.pid]=u}}
 function remUpd(u,dt){u.sw=Math.max(0,(u.sw||0)-dt);u.sh=Math.max(0,(u.sh||0)-dt);if(u.hp>0&&u.tx!==undefined){const k=Math.min(1,dt*16);u.x+=(u.tx-u.x)*k;u.y+=(u.ty-u.y)*k;let d=u.ta-u.a;d=Math.atan2(Math.sin(d),Math.cos(d));u.a+=d*k}}
 function mpUS(u){return[u.pid,Math.round(u.x),Math.round(u.y),+u.a.toFixed(2),Math.max(0,Math.round(u.hp)),Math.round(u.mh),u.pl?wsel:(u.cl||0),mpGt(u.t),+(u.sh||0).toFixed(1),+(u.rg||0).toFixed(1),+(u.bn||0).toFixed(1),+(u.cg||0).toFixed(1),+(u.bl||0).toFixed(1),+(u.bf||0).toFixed(1),u.br||0]}
 function mpFlush(){const st=[];U.forEach(u=>{if(u.own===MP.me&&u.pid)st.push(mpUS(u))});mpSend({t:'f',st,ac:MP.q.ac,dd:MP.q.dd});MP.q={ac:[],dd:[]}}
@@ -695,6 +696,7 @@ function openMulti(){if(document.getElementById('mpdlg'))return;
  const mkB=(r,tx,fn,css)=>{const b=el('button',BT+(css||''),tx);b.addEventListener('click',fn);r.appendChild(b);return b};
  const msg=el('div','font-size:13px;min-height:18px;text-align:center;color:#ffd23f');const say=(tx,c)=>{msg.textContent=tx;msg.style.color=c||'#ffd23f'};
  let nmI=null,PN='',lobT=null,hiT=null,durI=null,botI=null,plist=null,info=null;
+ const syncCfg=()=>{if(durI&&botI){MP.cfg.dur=Math.max(1,Math.min(15,+durI.value||3))*60;MP.cfg.bots=Math.max(0,Math.min(12,Math.floor(+botI.value)||0))}};
  const stopT=()=>{clearInterval(lobT);clearInterval(hiT);lobT=hiT=null};
  const rm=()=>{if(d.remove)d.remove();else if(d.parentNode)d.parentNode.removeChild(d)};
  const close=()=>{stopT();if(!MP.started)mpLeave();MP.cb=null;MP.onStart=null;rm()};
@@ -704,21 +706,21 @@ function openMulti(){if(document.getElementById('mpdlg'))return;
  const note=tx=>w.appendChild(el('div','font-size:13px;text-align:center;line-height:1.45',tx));
  const lbl=tx=>w.appendChild(el('div','font-size:13px;color:#ffd23f',tx));
  const drawPl=()=>{if(!plist)return;plist.replaceChildren();MP.pl.forEach(p=>plist.appendChild(el('div','font-size:14px;padding:3px 0',(p.id===MP.me?'► ':'')+p.nm+(MP.cfg.tm==='vs'?'  (Team '+(p.tm+1)+')':'')+(p.id===MP.hostId?'  · Host':''))))};
- const cfgTx=()=>(MP.cfg.tm==='coop'?'Gleiches Team gegen '+MP.cfg.bots+' Bots':'Gegnerische Teams')+' · '+Math.round(MP.cfg.dur/60)+' Min.';
+ const cfgTx=()=>(MP.cfg.tm==='coop'?'Gleiches Team gegen '+MP.cfg.bots+' Bots':'Gegnerische Teams'+(MP.cfg.bots?' + '+MP.cfg.bots+' Bots':''))+' · '+Math.round(MP.cfg.dur/60)+' Min.';
  function home(){stopT();w.replaceChildren();title('Multiplayer');note('Spielt zusammen in einem Raum: Einer erstellt das Spiel und gibt die Raum-ID weiter, die anderen treten damit bei.');
   nmI=el('input',IN);nmI.placeholder='Dein Name';nmI.value=(cs&&cs.name)||PN||'';nmI.maxLength=16;w.appendChild(nmI);
   const r=row();mkB(r,'Spiel erstellen',create);mkB(r,'Spiel beitreten',joinView);w.appendChild(r);w.appendChild(msg);say('');const r2=row();mkB(r2,'Schließen',close);w.appendChild(r2)}
- async function create(){PN=myName();say('Verbinde …','#e8d9bd');try{MP.room=mpId();MP.me='p'+Math.random().toString(36).slice(2,8);MP.host=true;MP.hostId=MP.me;MP.nm=PN;MP.cfg={tm:'vs',dur:180,bots:0};MP.pl=[{id:MP.me,nm:PN,tm:0}];MP.started=false;MP.ch=await mpConnect(MP.room);hostView();lobT=setInterval(mpLob,1000)}catch(e){say(e.message||'Verbindung fehlgeschlagen','#ff7070');mpLeave()}}
+ async function create(){PN=myName();say('Verbinde …','#e8d9bd');try{MP.room=mpId();MP.me='p'+Math.random().toString(36).slice(2,8);MP.host=true;MP.hostId=MP.me;MP.nm=PN;MP.cfg={tm:'vs',dur:180,bots:0};MP.pl=[{id:MP.me,nm:PN,tm:0}];MP.started=false;MP.ch=await mpConnect(MP.room);hostView();lobT=setInterval(()=>{syncCfg();mpLob()},1000)}catch(e){say(e.message||'Verbindung fehlgeschlagen','#ff7070');mpLeave()}}
  function hostView(){w.replaceChildren();title('Spiel erstellen');
   w.appendChild(el('div','text-align:center;font-size:13px','Raum-ID (an Mitspieler weitergeben):'));w.appendChild(el('div','text-align:center;font-size:34px;letter-spacing:6px;color:#fff;font-weight:700',MP.room));
   lbl('Teams');const r1=row(),b1=mkB(r1,'Gegnerische Teams',()=>setTm('vs')),b2=mkB(r1,'Gleiches Team (gegen Bots)',()=>setTm('coop'));w.appendChild(r1);
   const mark=()=>{b1.style.background=MP.cfg.tm==='vs'?'#6b4a10':'#2a2218';b2.style.background=MP.cfg.tm==='coop'?'#6b4a10':'#2a2218'};
   const setTm=t=>{MP.cfg.tm=t;if(t==='coop'&&!(+botI.value>0))botI.value=6;mpAssign();mpLob();mark();drawPl()};
   lbl('Dauer (Minuten, 1–15)');durI=el('input',IN);durI.type='number';durI.value=3;durI.min=1;durI.max=15;w.appendChild(durI);
-  lbl('Anzahl Bots (nur bei „Gleiches Team“, 0–12)');botI=el('input',IN);botI.type='number';botI.value=6;botI.min=0;botI.max=12;w.appendChild(botI);
+  lbl('Anzahl Bots (0–12, zusätzlich zu den Spielern; bei gegnerischen Teams auf beide Teams verteilt)');botI=el('input',IN);botI.type='number';botI.value=0;botI.min=0;botI.max=12;w.appendChild(botI);
   lbl('Spieler im Raum');plist=el('div','background:#1b1510;border-radius:8px;padding:8px 10px');w.appendChild(plist);mark();drawPl();MP.cb=drawPl;w.appendChild(msg);say('');
-  const r=row();mkB(r,'Start',()=>{const mn=Math.max(1,Math.min(15,+durI.value||3)),nb=MP.cfg.tm==='coop'?Math.max(0,Math.min(12,Math.floor(+botI.value)||0)):0;
-   if(MP.cfg.tm==='vs'&&MP.pl.length<2){say('Für „Gegnerische Teams“ braucht ihr mindestens 2 Spieler.','#ff7070');return}
+  const r=row();mkB(r,'Start',()=>{const mn=Math.max(1,Math.min(15,+durI.value||3)),nb=Math.max(0,Math.min(12,Math.floor(+botI.value)||0));
+   if(MP.cfg.tm==='vs'&&MP.pl.length<2&&nb===0){say('Für „Gegnerische Teams“ braucht ihr mindestens 2 Spieler oder ein paar Bots.','#ff7070');return}
    MP.cfg.dur=mn*60;MP.cfg.bots=nb;MP.seed=Math.floor(Math.random()*1e9);mpAssign();const g={t:'go',p:MP.pl.map(p=>[p.id,p.nm,p.tm]),c:MP.cfg,d:MP.seed};mpSend(g);setTimeout(()=>mpSend(g),250);setTimeout(()=>mpSend(g),700);stopT();mpStart()},';background:#6b4a10');
   mkB(r,'Abbrechen',close);w.appendChild(r)}
  function joinView(){stopT();w.replaceChildren();title('Spiel beitreten');note('Gib die Raum-ID ein, die dir der Host gesagt hat.');const idI=el('input',IN+';text-transform:uppercase;letter-spacing:4px;text-align:center;font-size:22px');idI.placeholder='RAUM-ID';idI.maxLength=8;w.appendChild(idI);w.appendChild(msg);say('');
